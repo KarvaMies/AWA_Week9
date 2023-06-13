@@ -87,5 +87,8 @@ router.post("/user/login",
   })
 });
 
+router.get("/private", validateToken, (req, res) => {
+  res.json({ email: req.user.email})
+})
 
 module.exports = router;
