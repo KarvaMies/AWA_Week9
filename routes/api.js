@@ -4,8 +4,8 @@ const router = express.Router();
 const bcrypt = require('bcrypt');
 const {body, validationResult } = require("express-validator");
 const User = require("../models/User");
-//const jwt = require("jsonwebtoken");
-//const validateToken = require("../auth/validateToken.js")
+const jwt = require("jsonwebtoken");
+const validateToken = require("../auth/validateToken.js")
 
 router.use(express.json());
 
@@ -58,20 +58,34 @@ router.get("/user/list", async (req, res) => {
 })
 
 
-/*
-router.post("/user/login", (req, res, next) => {
+
+router.post("/user/login", 
+  body("username").trim().escape(),
+  body("password"),
+  (req, res, next) => {
   console.log("Trying to login");
-  passport.authenticate('local', (err, user) => {
+  User.findOne({ email: req.body.email }, (err, user) => {
     if (err) throw err;
     if (!user) {
-      return res.status(401).json({ message: "Invalid username and/or password "});
+      return res.status(403).json({ message: "Invalid email and/or password."})
+    } else {
+      bcrypt.compare(req.body.password, user.password, (err, isMatch) => {
+        if (err) throw err;
+        if (isMatch) {
+          const jwtPayload = {
+            id: user._id,
+            email: user.email
+          }
+          jwt.sign(jwtPayload, process.env.SECRET, { expiresIn: 120 }, (err, token) => {
+            console.log("Logging in:")
+            console.log({ success: true, token });
+            res.json({ success: true, token });
+          })
+        }
+      })
     }
-    req.logIn(user, (err) => {
-      if (err) throw err;
-      return res.status(200).send("ok")
-    })
-  })(req, res, next)
+  })
 });
-*/
+
 
 module.exports = router;
